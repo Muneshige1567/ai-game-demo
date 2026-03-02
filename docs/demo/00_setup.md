@@ -10,42 +10,48 @@
 
 ### 事前準備手順
 
-1. **リポジトリをクリーンな状態にリセット**
+1. **リポジトリを空の状態にリセット**
    ```bash
    cd C:\Users\shibu\dev\ai-game-demo
-   git stash  # 現在の変更を退避（必要なら）
+   # 全ファイルを削除し、GAME_SPEC.md だけの状態にする
    git checkout master
-   git reset --hard <初期コミットハッシュ>
+   # src/, index.html, package.json 等を全て削除
+   # GAME_SPEC.md のみ残す
+   git add -A && git commit -m "reset: empty project with spec only"
    git push --force
+   ```
+
+   最終的なリポジトリの状態:
+   ```
+   ai-game-demo/
+   └── GAME_SPEC.md    ← これだけ！
    ```
 
 2. **Vercelプロジェクトを作成**
    - Vercelにログイン → "Add New Project"
    - GitHubリポジトリ `ai-game-demo` をインポート
    - Framework Preset: `Vite` を選択
-   - Deploy
+   - Deploy（この時点では中身がないのでエラーでもOK）
 
 3. **画面レイアウトの準備**
    ```
    ┌─────────────────┬─────────────────┐
    │                 │                 │
-   │   Claude Code   │   Vercel        │
-   │   (ターミナル)    │   (ブラウザ)      │
+   │   Claude Code   │   ブラウザ       │
+   │   (ターミナル)    │   (Vercel URL)  │
    │                 │                 │
-   ├─────────────────┴─────────────────┤
-   │      プロンプト入力エリア（拡大）      │
-   └───────────────────────────────────┘
+   └─────────────────┴─────────────────┘
    ```
    - 左: ターミナル（Claude Code実行画面）
    - 右: ブラウザ（VercelデプロイURL）
-   - 中央下: プロンプト入力部分をズーム表示
 
 4. **フォントサイズの調整**
    - ターミナル: フォントサイズ 16px 以上
    - ブラウザ: 100%ズーム
 
-5. **動作確認**
-   ```bash
-   npm run dev
-   ```
-   → ブラウザで "Robot Factory / Coming soon..." が表示されればOK
+5. **プロンプト準備**
+   - ワンショットプロンプト（`02_prompt.md` 参照）をコピペ準備しておく
+
+## デモ開始時の画面イメージ
+ターミナルで `ls` すると GAME_SPEC.md だけがある状態。
+ここから全てが生まれる、という演出。
