@@ -6,46 +6,53 @@
 - Node.js (v18以上)
 - Claude Code CLI
 - GitHub アカウント
-- Vercel アカウント（GitHubと連携済み）
 
 ### 事前準備手順
 
-1. **リポジトリをクリーンな状態にリセット**
+1. **masterからデモ用ブランチを切る**
    ```bash
    cd C:\Users\shibu\dev\ai-game-demo
-   git stash  # 現在の変更を退避（必要なら）
    git checkout master
-   git reset --hard <初期コミットハッシュ>
-   git push --force
+   git checkout -b demo/run-YYYYMMDD
    ```
 
-2. **Vercelプロジェクトを作成**
-   - Vercelにログイン → "Add New Project"
-   - GitHubリポジトリ `ai-game-demo` をインポート
-   - Framework Preset: `Vite` を選択
-   - Deploy
+2. **ブランチをGAME_SPEC.mdだけの状態にする**
+   ```bash
+   # docs/, CLAUDE.md 等を削除し、GAME_SPEC.md のみ残す
+   git rm -r docs/ CLAUDE.md
+   git commit -m "demo: clean slate with spec only"
+   ```
+
+   デモブランチの状態:
+   ```
+   ai-game-demo/
+   ├── .gitignore
+   └── GAME_SPEC.md    ← これだけ！
+   ```
 
 3. **画面レイアウトの準備**
    ```
    ┌─────────────────┬─────────────────┐
    │                 │                 │
-   │   Claude Code   │   Vercel        │
-   │   (ターミナル)    │   (ブラウザ)      │
+   │   Claude Code   │   ブラウザ       │
+   │   (ターミナル)    │  (localhost)    │
    │                 │                 │
-   ├─────────────────┴─────────────────┤
-   │      プロンプト入力エリア（拡大）      │
-   └───────────────────────────────────┘
+   └─────────────────┴─────────────────┘
    ```
    - 左: ターミナル（Claude Code実行画面）
-   - 右: ブラウザ（VercelデプロイURL）
-   - 中央下: プロンプト入力部分をズーム表示
+   - 右: ブラウザ（localhost:5173 — Vite dev server）
 
 4. **フォントサイズの調整**
    - ターミナル: フォントサイズ 16px 以上
    - ブラウザ: 100%ズーム
 
-5. **動作確認**
-   ```bash
-   npm run dev
-   ```
-   → ブラウザで "Robot Factory / Coming soon..." が表示されればOK
+5. **プロンプト準備**
+   - ワンショットプロンプト（`02_prompt.md` 参照）をコピペ準備しておく
+
+## デモ開始時の画面イメージ
+ターミナルで `ls` すると GAME_SPEC.md だけがある状態。
+ここから全てが生まれる、という演出。
+
+## masterに戻すとき
+デモ終了後、masterはそのまま。ブランチは記録として残してもOK。
+次回デモ時はまた新しいブランチを切る。
