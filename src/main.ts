@@ -3,6 +3,7 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // ============================================================
 // Types
@@ -21,6 +22,9 @@ interface Enemy {
   animPhase: number;
   dying: boolean;
   deathTimer: number;
+  hpBar: THREE.Mesh;
+  hpBarBg: THREE.Mesh;
+  glow: THREE.PointLight;
 }
 interface Bullet {
   mesh: THREE.Mesh;
@@ -560,20 +564,73 @@ function spawnParticles(position: THREE.Vector3, color: number, count: number, s
 }
 
 // ============================================================
-// Enemy (simple capsule + sphere)
+// Enemy - GLB model loading
 // ============================================================
+const zombieTemplates: THREE.Group[] = [];
+
+const gltfLoader = new GLTFLoader();
+const zombieFiles = ['/zombiea.glb', '/zombieb.glb', '/zombiec.glb'];
+for (const file of zombieFiles) {
+  gltfLoader.load(file, (gltf) => {
+    const template = new THREE.Group();
+    const model = gltf.scene;
+    model.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    template.add(model);
+    zombieTemplates.push(template);
+    console.log(`Zombie model loaded: ${file}`);
+  });
+}
+
 function createEnemy(): Enemy {
   const group = new THREE.Group();
 
-  const mat = new THREE.MeshStandardMaterial({ color: 0x446644, roughness: 0.7 });
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.25, 0.8, 6, 10), mat);
-  body.position.y = 1.0;
-  body.castShadow = true;
-  group.add(body);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), mat);
-  head.position.y = 1.7;
-  head.castShadow = true;
-  group.add(head);
+  // Clone random GLB model or fallback to simple mesh
+  if (zombieTemplates.length > 0) {
+    const template = zombieTemplates[Math.floor(Math.random() * zombieTemplates.length)];
+    const clone = template.clone(true);
+    clone.scale.setScalar(1.0);
+    clone.rotation.y = Math.PI;
+    group.add(clone);
+  } else {
+    // Fallback: simple capsule if model not loaded yet
+    const mat = new THREE.MeshStandardMaterial({ color: 0x446644, roughness: 0.7 });
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.25, 0.8, 6, 10), mat);
+    body.position.y = 1.0;
+    body.castShadow = true;
+    group.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), mat);
+    head.position.y = 1.7;
+    head.castShadow = true;
+    group.add(head);
+  }
+
+  // Eye glow light (always added)
+  const eyeColor = Math.random() > 0.3 ? 0xff2200 : 0xffee00;
+  const eyeGlow = new THREE.PointLight(eyeColor, 0.5, 4);
+  eyeGlow.position.set(0, 1.85, -0.17);
+  group.add(eyeGlow);
+
+  // HP bar bg
+  const hpBarBg = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.8, 0.08),
+    new THREE.MeshBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.7, side: THREE.DoubleSide }),
+  );
+  hpBarBg.position.y = 2.4;
+  group.add(hpBarBg);
+
+  // HP bar fill
+  const hpBar = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.76, 0.05),
+    new THREE.MeshBasicMaterial({ color: 0x44ff44, side: THREE.DoubleSide }),
+  );
+  hpBar.position.y = 2.4;
+  hpBar.position.z = 0.001;
+  group.add(hpBar);
 
   // Spawn position
   let sx: number, sz: number;
@@ -589,7 +646,7 @@ function createEnemy(): Enemy {
 
   const waveSpeed = 1.8 + state.wave * 0.25;
   const maxHp = 1 + Math.floor(state.wave / 3);
-  return { mesh: group, hp: maxHp, maxHp, speed: waveSpeed + Math.random() * 0.5, animPhase: Math.random() * Math.PI * 2, dying: false, deathTimer: 0 };
+  return { mesh: group, hp: maxHp, maxHp, speed: waveSpeed + Math.random() * 0.5, animPhase: Math.random() * Math.PI * 2, dying: false, deathTimer: 0, hpBar, hpBarBg, glow: eyeGlow };
 }
 
 // ============================================================
@@ -1105,6 +1162,9 @@ function update(dt: number) {
       e.deathTimer -= dt;
       e.mesh.rotation.x = Math.min(Math.PI / 2, e.mesh.rotation.x + dt * 4);
       e.mesh.position.y -= dt * 1.5;
+      e.glow.intensity = 0;
+      e.hpBar.visible = false;
+      e.hpBarBg.visible = false;
       const fadeRatio = Math.max(0, e.deathTimer / 0.6);
       e.mesh.traverse(child => {
         if (child instanceof THREE.Mesh) {
@@ -1135,7 +1195,7 @@ function update(dt: number) {
     pushOutOfColliders(e.mesh.position, 0.4);
     e.mesh.lookAt(camera.position.x, 0, camera.position.z);
 
-    // Animation
+    // Animation (whole-body since GLB is a single mesh)
     if (distToPlayer > 1.8) {
       e.animPhase += dt * e.speed * 2;
     } else {
@@ -1145,12 +1205,29 @@ function update(dt: number) {
     const phase = e.animPhase;
     const walking = distToPlayer > 1.8;
 
-    // Walking bob
+    // Walking bob (up/down) - applied to the group's first child (GLB model)
     const bobOffset = walking ? Math.abs(Math.sin(phase)) * 0.06 : 0;
+    // Slight body sway
     e.mesh.rotation.z = Math.sin(phase * 0.8) * (walking ? 0.04 : 0.08);
     if (e.mesh.children.length > 0) {
-      e.mesh.children[0].position.y = 1.0 + bobOffset;
+      e.mesh.children[0].position.y = bobOffset;
     }
+
+    // HP bar: face camera (billboard)
+    e.hpBar.lookAt(camera.position);
+    e.hpBarBg.lookAt(camera.position);
+    // Update HP bar scale
+    const hpRatio = e.hp / e.maxHp;
+    e.hpBar.scale.x = Math.max(0.01, hpRatio);
+    e.hpBar.position.x = -(1 - hpRatio) * 0.38; // left-align
+    if (hpRatio < 0.5) (e.hpBar.material as THREE.MeshBasicMaterial).color.setHex(0xff4444);
+    else (e.hpBar.material as THREE.MeshBasicMaterial).color.setHex(0x44ff44);
+    // Only show HP bar if damaged
+    e.hpBar.visible = e.hp < e.maxHp;
+    e.hpBarBg.visible = e.hp < e.maxHp;
+
+    // Eye glow flicker
+    e.glow.intensity = 0.4 + Math.sin(Date.now() * 0.01 + e.animPhase) * 0.2;
 
     // Damage player
     if (distToPlayer < 2.0) {
