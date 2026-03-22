@@ -242,10 +242,10 @@ for (const [x, z, color] of lightDefs) {
 
   const barrelGeo = new THREE.CylinderGeometry(0.3, 0.35, 0.8, 8);
   const barrelMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8, roughness: 0.3 });
-  const barrelMesh = new THREE.Mesh(barrelGeo, barrelMat);
-  barrelMesh.position.set(x, 0.4, z);
-  barrelMesh.castShadow = true;
-  scene.add(barrelMesh);
+  const barrel = new THREE.Mesh(barrelGeo, barrelMat);
+  barrel.position.set(x, 0.4, z);
+  barrel.castShadow = true;
+  scene.add(barrel);
 
   const fireGeo = new THREE.SphereGeometry(0.25, 6, 6);
   const fireMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 });
@@ -462,10 +462,10 @@ for (let ri = 0; ri < 3; ri++) {
 }
 
 // Muzzle brake
-const muzzleBrake = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.025, 0.06, 8), gunMetalMat);
-muzzleBrake.rotation.x = Math.PI / 2;
-muzzleBrake.position.set(0, 0.015, -0.58);
-gunGroup.add(muzzleBrake);
+const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.025, 0.06, 8), gunMetalMat);
+muzzle.rotation.x = Math.PI / 2;
+muzzle.position.set(0, 0.015, -0.58);
+gunGroup.add(muzzle);
 
 // Magazine (curved)
 const magGeo = new THREE.BoxGeometry(0.035, 0.14, 0.05);
@@ -482,9 +482,9 @@ gunGrip.rotation.x = 0.35;
 gunGroup.add(gunGrip);
 
 // Stock
-const gunStock = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.06, 0.2), gunAccentMat);
-gunStock.position.set(0, 0.0, 0.22);
-gunGroup.add(gunStock);
+const stock = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.06, 0.2), gunAccentMat);
+stock.position.set(0, 0.0, 0.22);
+gunGroup.add(stock);
 const stockPad = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.07, 0.02),
   new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 }));
 stockPad.position.set(0, 0.0, 0.33);
