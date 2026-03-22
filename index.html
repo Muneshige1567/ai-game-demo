@@ -46,6 +46,7 @@
       }
       #crosshair::before { width: 2px; height: 8px; left: 50%; top: 0; transform: translateX(-50%); box-shadow: 0 16px 0 rgba(255,255,255,0.7); }
       #crosshair::after { height: 2px; width: 8px; top: 50%; left: 0; transform: translateY(-50%); box-shadow: 16px 0 0 rgba(255,255,255,0.7); }
+      #crosshair-dot { position: absolute; top: 50%; left: 50%; width: 2px; height: 2px; background: rgba(255,50,50,0.9); transform: translate(-50%,-50%); }
 
       #overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -77,6 +78,30 @@
         animation: blink 2s infinite;
       }
       #auto-badge.hidden { display: none; }
+
+      #wave-announce {
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+        font-family: 'Courier New', monospace; font-size: 48px; font-weight: bold;
+        color: #ff4444; text-shadow: 0 0 20px rgba(255,0,0,0.5);
+        pointer-events: none; z-index: 15; opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      #combo {
+        position: fixed; top: 35%; right: 10%;
+        font-family: 'Courier New', monospace; font-size: 32px; font-weight: bold;
+        color: #ffaa00; text-shadow: 0 0 15px rgba(255,170,0,0.5);
+        pointer-events: none; z-index: 15; opacity: 0;
+        transition: opacity 0.2s;
+      }
+
+      #minimap {
+        position: fixed; bottom: 20px; right: 20px;
+        width: 140px; height: 140px;
+        background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 4px; z-index: 10; pointer-events: none;
+      }
+      #minimap canvas { width: 100%; height: 100%; }
     </style>
   </head>
   <body>
@@ -98,7 +123,10 @@
       </div>
       <div id="hud-kills">KILLS <span>0</span></div>
     </div>
-    <div id="crosshair"></div>
+    <div id="crosshair"><div id="crosshair-dot"></div></div>
+    <div id="wave-announce"></div>
+    <div id="combo"></div>
+    <div id="minimap"><canvas id="minimap-canvas" width="140" height="140"></canvas></div>
     <div id="overlay">
       <h1>ZOMBIE SURVIVAL</h1>
       <div class="subtitle">SURVIVE THE HORDE</div>
