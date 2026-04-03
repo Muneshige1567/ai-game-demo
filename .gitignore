@@ -1,6 +1,9 @@
 # Demo setup
 docs/
 
+# Claude Code
+.claude/
+
 # Logs
 logs
 *.log
